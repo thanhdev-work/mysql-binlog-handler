@@ -1,4 +1,4 @@
-package cn.bucheng.mysql.aware;
+package vn.thanhdev.utils;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -6,11 +6,6 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.stereotype.Component;
 
-/**
- * @author buchengyin
- * @create 2019/7/27 8:48
- * @describe
- */
 @Component
 public class BeanFactoryUtils implements BeanFactoryAware {
 
@@ -21,7 +16,7 @@ public class BeanFactoryUtils implements BeanFactoryAware {
         BeanFactoryUtils.beanFactory = (DefaultListableBeanFactory) beanFactory;
     }
 
-    public static DefaultListableBeanFactory getBeanFactory(){
+    public static DefaultListableBeanFactory getBeanFactory() {
         return beanFactory;
     }
 }
