@@ -2,10 +2,13 @@ package vn.thanhdev.core;
 
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import vn.thanhdev.core.config.BinLogConfig;
+import vn.thanhdev.core.exception.BinLogCoreException;
 import vn.thanhdev.core.listener.BinLogEventListenter;
 
 import javax.annotation.PreDestroy;
@@ -13,20 +16,26 @@ import javax.annotation.PreDestroy;
 @Component
 @Log4j2
 @Order
-public class BinLogMain implements CommandLineRunner {
+public class BinLogConnector implements CommandLineRunner {
 
     private BinaryLogClient binaryLogClient;
-    private final BinLogConfig binaryLogConfig;
-    private final BinLogEventListenter listener;
+    @Autowired
+    private BinLogConfig binaryLogConfig;
+    @Autowired
+    private BinLogEventListenter listener;
 
-    public BinLogMain(BinLogConfig binaryLogConfig,
-                      BinLogEventListenter listener) {
-        this.binaryLogConfig = binaryLogConfig;
-        this.listener = listener;
+    public BinLogConnector() {
     }
 
     public void initBinLog() {
         Thread init = new Thread(() -> {
+            if (ObjectUtils.isEmpty(binaryLogConfig.getUsername()) ||
+                    ObjectUtils.isEmpty(binaryLogConfig.getPass()) ||
+                    ObjectUtils.isEmpty(binaryLogConfig.getPort()) ||
+                    ObjectUtils.isEmpty(binaryLogConfig.getHost())) {
+                throw new BinLogCoreException("MySQL binlog config is invalid");
+            }
+
             binaryLogClient = new BinaryLogClient(
                     binaryLogConfig.getHost(),
                     binaryLogConfig.getPort(),
@@ -39,8 +48,11 @@ public class BinLogMain implements CommandLineRunner {
                 log.info("Connecting to MySQL binlog start");
                 binaryLogClient.connect();
                 log.info("Connecting to MySQL binlog done");
+                log.info("MySQL binlog receiver started");
             } catch (Exception e) {
-                throw new RuntimeException();
+                log.error("Error when init binlog: {}", e.getMessage());
+                e.printStackTrace();
+                throw new BinLogCoreException(e.getMessage());
             }
         });
         init.setName("binlog-listener-thread");
@@ -60,12 +72,6 @@ public class BinLogMain implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        try {
-            initBinLog();
-            log.info("MySQL binlog receiver started");
-        } catch (RuntimeException e) {
-            log.error("Error when init binlog: {}", e.getMessage());
-            throw new RuntimeException();
-        }
+        initBinLog();
     }
 }

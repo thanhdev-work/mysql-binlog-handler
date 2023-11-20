@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class BinLogEventListenter implements BinaryLogClient.EventListener {
 
     @Override
-    public void onEvent(Event event) {
+    public synchronized void onEvent(Event event) {
         log.info("Event: {}", event.toString());
     }
 }
