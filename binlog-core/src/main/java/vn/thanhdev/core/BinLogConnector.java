@@ -1,9 +1,9 @@
 package vn.thanhdev.core;
 
 import com.github.shyiko.mysql.binlog.BinaryLogClient;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
@@ -16,7 +16,7 @@ import javax.annotation.PreDestroy;
 @Component
 @Log4j2
 @Order
-public class BinLogConnector implements CommandLineRunner {
+public class BinLogConnector {
 
     private BinaryLogClient binaryLogClient;
     @Autowired
@@ -24,10 +24,11 @@ public class BinLogConnector implements CommandLineRunner {
     @Autowired
     private BinLogEventListenter listener;
 
-    public BinLogConnector() {
+    public void start() {
+        initBinLog();
     }
 
-    public void initBinLog() {
+    private void initBinLog() {
         Thread init = new Thread(() -> {
             if (ObjectUtils.isEmpty(binaryLogConfig.getUsername()) ||
                     ObjectUtils.isEmpty(binaryLogConfig.getPass()) ||
@@ -45,33 +46,22 @@ public class BinLogConnector implements CommandLineRunner {
             binaryLogClient.registerEventListener(listener);
 
             try {
-                log.info("Connecting to MySQL binlog start");
+                log.info("## Connecting to MySQL binlog ...");
                 binaryLogClient.connect();
-                log.info("Connecting to MySQL binlog done");
-                log.info("MySQL binlog receiver started");
             } catch (Exception e) {
-                log.error("Error when init binlog: {}", e.getMessage());
+                log.error("## Error when connect binlog: {}", e.getMessage());
                 e.printStackTrace();
                 throw new BinLogCoreException(e.getMessage());
             }
         });
-        init.setName("binlog-listener-thread");
         init.start();
-
     }
 
     @PreDestroy
-    public void destroy() {
-        try {
-            binaryLogClient.disconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Error when destroy BinLogMain: {}", e.getMessage());
-        }
+    @SneakyThrows
+    private void destroy() {
+        log.info("## Disconnected to MySQL binlog");
+        binaryLogClient.disconnect();
     }
 
-    @Override
-    public void run(String... args) {
-        initBinLog();
-    }
 }

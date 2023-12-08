@@ -21,6 +21,4 @@ public class BinLogConfig {
     private String username;
     @Value("${binlog.password}")
     private String pass;
-    private String file;
-    private Long position;
 }
